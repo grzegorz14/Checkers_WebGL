@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Chess WebGL</title>
+
+    <script src="./libs/tween.umd.js"></script>
+    <script src="./libs/three97.js"></script>
+
+    <link rel="stylesheet" href="./styles.css">
+</head>
+
+<body>
+    <div id="topBar">
+        <h1 id="status">STATUS</h1>
+        <h2 style="margin-left: 40px;">Info:</h2>
+        <h2 id="info"></h2>
+    </div>
+
+    <div id="logingDialog">
+        <h1>Log in</h1>
+        <input type="text" id="login" placeholder="login">
+        <button id="playButton" class="dialogButton">Play</button>
+        <button id="resetButton" class="dialogButton">Reset</button>
+    </div>
+
+    <h1 id="dialog" class="invisible">Waiting for an opponent...</h1>
+    <h1 id="counter" class="invisible"></h1>
+
+    <div id="boardStatus" class="invisible">
+        <label style="grid-column: 1; grid-row: 0;">0</label>
+        <label style="grid-column: 2; grid-row: 0;">0</label>
+        <label style="grid-column: 3; grid-row: 0;">0</label>
+        <label style="grid-column: 4; grid-row: 0;">0</label>
+        <label style="grid-column: 5; grid-row: 0;">0</label>
+        <label style="grid-column: 6; grid-row: 0;">0</label>
+        <label style="grid-column: 7; grid-row: 0;">0</label>
+        <label style="grid-column: 8; grid-row: 0;">0</label>
+    </div>
+
+    <div id="root" class="blackMist"></div>
+
+    <script type="module" src="./Main.js"></script>
+</body>
+
+</html>

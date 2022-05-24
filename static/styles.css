@@ -1,0 +1,134 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    overflow-y: hidden;
+    overflow-x: hidden;
+    background-color: black;
+    font-family: monospace;
+    color: lime;
+    font-size: 20px;
+}
+
+#topBar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 60px;
+    background-color: green;
+    display: flex;
+    flex-direction: row;
+    text-align: left;
+    align-items: center;
+    border-bottom: 2px solid lime;
+    padding-left: 20px;
+    z-index: 9;
+}
+
+h1 {
+    color: lime;
+}
+
+#info {
+    margin-left: 20px;
+    color: lime;
+    font-size: 18px;
+}
+
+#boardStatus {
+    border: 1px solid lime;
+    border-radius: 10px;
+    padding: 5px;
+    position: fixed;
+    left: 40px;
+    bottom: 40px;
+    width: 250px;
+    height: 250px;
+    background-color: green;
+    color: white;
+    display: grid;
+    grid-template-rows: auto auto auto auto auto auto auto auto;
+    grid-template-columns: auto auto auto auto auto auto auto auto;
+}
+
+#boardStatus label {
+    text-align: center;
+    font-size: 22px;
+}
+
+#logingDialog {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid lime;
+    border-radius: 10px;
+    z-index: 10;
+}
+
+input[type="text"] {
+    padding: 5px;
+    margin: 5px;
+    font-size: 16px;
+    border-radius: 10px;
+    background-color: transparent;
+    border: 2px solid lime;
+    color: lime;
+}
+
+::placeholder {
+    color: lime;
+}
+
+.dialogButton {
+    border: lime;
+    border-radius: 10px;
+    padding: 5px;
+    font-size: 16px;
+    background-color: lime;
+    color: black;
+    font-weight: bold;
+    margin: 5px;
+    width: 120px;
+}
+
+.dialogButton:hover {
+    color: lime;
+    background-color: green;
+    transition: 300ms;
+}
+
+#dialog {
+    font-size: 50px;
+    position: absolute;
+    top: 40%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+}
+
+#counter {
+    position: absolute;
+    top: 60%;
+    left: 50%;
+    font-size: 90px;
+    transform: translate(-50%, -50%);
+    z-index: 11;
+}
+
+.blackMist {
+    background-color: black;
+    opacity: 50%;
+}
+
+.invisible {
+    visibility: hidden;
+}
