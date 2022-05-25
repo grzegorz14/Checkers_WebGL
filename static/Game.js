@@ -6,9 +6,7 @@ class Game {
         this.scene = new THREE.Scene();
         this.mepels = [];
         this.blackTiles = [];
-        this.id = 0;
         this.kill = 0;
-        this.killed = false;
         this.moved = false;
         this.player = null;
         this.opponent = null;
@@ -72,7 +70,7 @@ class Game {
         // MOVE - onClick on object - raycaster
         let selected = false;
         let object;
-        let tileToKill = null;
+        let mepelToKill = null;
         let killId = -1;
         let killAnimation = null;
         let mepel = null;
@@ -87,17 +85,44 @@ class Game {
 
             if (intersects.length > 0 && this.yourTurn) {
                 object = intersects[0].object;
-                if (mepel != null && mepel.isSelected) {
-                    //if mepel to move is chosen
-                    if (
-                        object.constructor.name == "Item" &&
-                        object.isHighlighted &&
-                        this.boardState[object.row][object.column] == 0
-                    ) {
+                //selecting mepel to move
+                if (object.constructor.name == "Mepel") {
+                    this.unselectAll()
+                    mepel = object;
+                    if (mepel.color == this.player) {
+                        rowToClear = mepel.row;
+                        columnToClear = mepel.column;
+                        mepel.selected(true);
+                        selected = true;
+
+                        //mark possible moves
+                        if (mepel.type == "queen") {
+                            let right = this.checkField(mepel.row, mepel.column, "right", 1, -1, "normal");
+                            let left = this.checkField(mepel.row,mepel.column,"left", 1, -1, "normal");
+                            let rightDown = this.checkField(mepel.row,mepel.column, "right",1, -1, "queen");
+                            let leftDown = this.checkField(mepel.row,mepel.column, "left", 1, -1,"queen");
+                            if (!right && !left && !rightDown && !leftDown) { //if there are no possible moves - unselect
+                                mepel.selected(false);
+                                selected = false;
+                                mepel = null;
+                            }
+                        } else {
+                            let right = this.checkField(mepel.row, mepel.column, "right", 1, -1, "normal");
+                            let left = this.checkField(mepel.row,mepel.column,"left", 1, -1, "normal");
+                            if (!right && !left) { //if there are no possible moves - unselect
+                                mepel.selected(false);
+                                selected = false;
+                                mepel = null;
+                            }
+                        }
+                    }
+                }
+                else if (mepel != null && mepel.isSelected) { //if mepel to move is chosen
+                    if (object.constructor.name == "Item" && object.isHighlighted && this.boardState[object.row][object.column] == 0) {
                         killId = -1;
-                        this.killed = false;
                         mepel.selected(false);
                         selected = false;
+                        this.yourTurn = false;
 
                         this.blackTiles.forEach((tile) => {
                             if (tile === object) {
@@ -108,17 +133,11 @@ class Game {
                                             if (index > -1) {
                                                 this.mepels.splice(index, 1);
                                             }
-                                            killAnimation = new TWEEN.Tween(m.position)
-                                                .easing(TWEEN.Easing.Cubic.Out)
-                                                .to({ y: m.position.y - 20 }, 600);
-
-                                            tileToKill = m;
+                                            mepelToKill = m;
                                             killId = m.id;
                                             tile.killId = -1;
                                             this.kill += 1;
-                                            this.killed = true;
-                                            if (this.kill == 8) {
-                                                //win if all of enemy mepels are killed
+                                            if (this.kill == 8) { //win if all of enemy mepels are killed
                                                 const body = JSON.stringify({ player: this.player });
                                                 const headers = { "Content-Type": "application/json" };
                                                 await fetch("/win", { method: "post", headers, body });
@@ -131,48 +150,17 @@ class Game {
                         });
 
                         if (killId != -1) {
-                            let mepelCopy = mepel;
-                            this.boardState[tileToKill.row][tileToKill.column] = 0;
-                            let upAnimation = new TWEEN.Tween(mepelCopy.position)
-                                .easing(TWEEN.Easing.Cubic.Out)
-                                .to({ y: mepelCopy.position.y + 30 }, 200)
-                                .start();
-
-                            upAnimation.onComplete(() => {
-                                let moveAnimation = new TWEEN.Tween(mepelCopy.position)
-                                    .easing(TWEEN.Easing.Cubic.Out)
-                                    .to({ x: object.positionX, z: object.positionZ }, 400)
-                                    .start();
-
-                                moveAnimation.onComplete(() => {
-                                    let downAnimation = new TWEEN.Tween(mepelCopy.position)
-                                        .easing(TWEEN.Easing.Cubic.Out)
-                                        .to({ y: mepelCopy.position.y - 30 }, 200)
-                                        .start();
-
-                                    downAnimation.onComplete(() => {
-                                        killAnimation.start();
-                                        killAnimation.onComplete(() => {
-                                            this.scene.remove(tileToKill);
-                                            console.log("KILL");
-                                        });
-                                    });
-                                });
-                            });
+                            await this.killAndMove(mepel, mepelToKill, object)
                         } else {
-                            let moveAnimation = new TWEEN.Tween(mepel.position)
+                            new TWEEN.Tween(mepel.position)
                                 .easing(TWEEN.Easing.Cubic.Out)
-                                .to({ x: object.positionX, z: object.positionZ }, 600)
+                                .to({ x: object.position.x, z: object.position.z }, 600)
                                 .start();
                         }
 
                         mepel.row = object.row;
                         mepel.column = object.column;
-                        if (
-                            (mepel.color == 1 && mepel.row == 0) ||
-                            (mepel.color == 2 && mepel.row == 7)
-                        ) {
-                            //check queen condition
+                        if ((mepel.color == 1 && mepel.row == 0) || (mepel.color == 2 && mepel.row == 7)) {//check queen condition
                             mepel.becomeQueen();
                         }
                         this.boardState[rowToClear][columnToClear] = 0;
@@ -185,8 +173,8 @@ class Game {
                         this.moved = true;
 
                         body = JSON.stringify({
-                            x: object.positionX,
-                            z: object.positionZ,
+                            x: object.position.x,
+                            z: object.position.z,
                             row: object.row,
                             column: object.column,
                             color: mepel.color,
@@ -196,51 +184,58 @@ class Game {
                         });
                         await fetch("/moveMepel", { method: "post", headers, body });
 
-                        // if (killId == -1) {
-                        //     this.yourTurn = false;
-                        // }
-                        this.yourTurn = false;
-                        tileToKill = null;
                         mepel = null;
                     }
-                } else {
-                    //selecting mepel to move
-                    if (object.constructor.name == "Mepel") {
-                        mepel = object;
-                        if (mepel.color == this.player) {
-                            rowToClear = mepel.row;
-                            columnToClear = mepel.column;
-                            mepel.selected(true);
-                            selected = true;
-
-                            //mark possible moves
-                            if (mepel.type == "queen") {
-                                let right = this.checkField(mepel.row, mepel.column, "right", 1, -1, "normal");
-                                let left = this.checkField(mepel.row,mepel.column,"left", 1, -1, "normal");
-                                let rightDown = this.checkField(mepel.row,mepel.column, "right",1, -1, "queen");
-                                let leftDown = this.checkField(mepel.row,mepel.column, "left", 1, -1,"queen");
-                                if (!right && !left && !rightDown && !leftDown) {
-                                    //if there are no possible moves - unselect
-                                    mepel.selected(false);
-                                    selected = false;
-                                    mepel = null;
-                                }
-                            } else {
-                                let right = this.checkField(mepel.row, mepel.column, "right", 1, -1, "normal");
-                                let left = this.checkField(mepel.row,mepel.column,"left", 1, -1, "normal");
-                                if (!right && !left) {
-                                    //if there are no possible moves - unselect
-                                    mepel.selected(false);
-                                    selected = false;
-                                    mepel = null;
-                                }
-                            }
-                        }
-                    }
-                }
+                } 
             }
         });
         this.render();
+    }
+
+    killAndMove = async (mepel, mepelToKill, tile) => {
+        this.boardState[mepelToKill.row][mepelToKill.column] = 0;
+        let upAnimation = new TWEEN.Tween(mepel.position)
+            .easing(TWEEN.Easing.Cubic.Out)
+            .to({ y: mepel.position.y + 30 }, 200)
+            .start();
+
+        upAnimation.onComplete(() => {
+            let moveAnimation = new TWEEN.Tween(mepel.position)
+                .easing(TWEEN.Easing.Cubic.Out)
+                .to({ x: tile.position.x, z: tile.position.z }, 400)
+                .start();
+
+            moveAnimation.onComplete(() => {
+                let downAnimation = new TWEEN.Tween(mepel.position)
+                    .easing(TWEEN.Easing.Cubic.Out)
+                    .to({ y: mepel.position.y - 30 }, 200)
+                    .start();
+
+                downAnimation.onComplete(() => {
+                    let killAnimation = new TWEEN.Tween(mepelToKill.position)
+                        .easing(TWEEN.Easing.Cubic.Out)
+                        .to({ y: mepelToKill.position.y - 20 }, 600)
+                        .start();
+                    killAnimation.onComplete(() => {
+                        this.scene.remove(mepelToKill);
+                        mepelToKill = null;
+                    });
+                });
+            });
+        });
+    }
+
+    unselectAll = () => {
+        this.mepels.forEach(m => {
+            if (m.isSelected) {
+                m.selected(false)
+            }
+        });
+        this.blackTiles.forEach(tile => {
+            if (tile.isHighlighted) {
+                tile.highlighted(false)
+            }
+        });
     }
 
     checkField = (row, column, direction, checkNumber, killId, mepelType) => {
@@ -276,109 +271,82 @@ class Game {
         return false;
     };
 
-    checkQueenMove = () => {
-        row = mepelType == "queen" ? this.player == 1 ? row + 1 : row - 1 : this.player == 1 ?row - 1 : row + 1;
-        column = direction == "right" ? column + 1 : column - 1;
-        // if (mepelType == "queen") {
-        //     this.checkField(row, column, direction, checkNumber, mepel.id, mepelType);
-        // }
-        if (row >= 0 && row < 8 && column >= 0 && column < 8 && checkNumber <= 2) {
-            switch (this.boardState[row][column]) {
-                case this.player: //your mepel
-                    return false;
-                case this.opponent: //opponent
-                    this.mepels.forEach((mepel) => {
-                        if (mepel.row == row && mepel.column == column) {
-                            return this.checkField(row,column,direction,checkNumber + 1,mepel.id, mepelType);
-                        }
-                    });
-                    return true;
-                case 0: //empty field
-                    this.blackTiles.forEach((tile) => {
-                        if (tile.row == row && tile.column == column) {
-                            if (tile.row == row && tile.column == column) {
-                                tile.highlighted(true);
-                                if (checkNumber == 2) {
-                                    tile.killId = killId;
-                                }
-                            }
-                        }
-                    });
-                    return true;
-                case -1: //out of the board
-                    return false;
-            }
-        }
-        return false;
-    }
+    // checkQueenMove = () => {
+    //     row = mepelType == "queen" ? this.player == 1 ? row + 1 : row - 1 : this.player == 1 ?row - 1 : row + 1;
+    //     column = direction == "right" ? column + 1 : column - 1;
+    //     // if (mepelType == "queen") {
+    //     //     this.checkField(row, column, direction, checkNumber, mepel.id, mepelType);
+    //     // }
+    //     if (row >= 0 && row < 8 && column >= 0 && column < 8 && checkNumber <= 2) {
+    //         switch (this.boardState[row][column]) {
+    //             case this.player: //your mepel
+    //                 return false;
+    //             case this.opponent: //opponent
+    //                 this.mepels.forEach((mepel) => {
+    //                     if (mepel.row == row && mepel.column == column) {
+    //                         return this.checkField(row,column,direction,checkNumber + 1,mepel.id, mepelType);
+    //                     }
+    //                 });
+    //                 return true;
+    //             case 0: //empty field
+    //                 this.blackTiles.forEach((tile) => {
+    //                     if (tile.row == row && tile.column == column) {
+    //                         if (tile.row == row && tile.column == column) {
+    //                             tile.highlighted(true);
+    //                             if (checkNumber == 2) {
+    //                                 tile.killId = killId;
+    //                             }
+    //                         }
+    //                     }
+    //                 });
+    //                 return true;
+    //             case -1: //out of the board
+    //                 return false;
+    //         }
+    //     }
+    //     return false;
+    // }
 
     createBoard = () => {
         const geometry = new THREE.BoxGeometry(50, 18, 50);
         const lightWood = new THREE.MeshBasicMaterial({
             side: THREE.DoubleSide,
-            map: new THREE.TextureLoader().load("./textures/lightWood.png"),
+            map: new THREE.TextureLoader().load("https://i.imgur.com/Z5fkFZp.png"),
         });
 
         let tile;
         for (let i = 0; i < this.board.length; i++) {
             for (let j = 0; j < this.board[i].length; j++) {
-                if (this.board[i][j] == 0) {
+                if (this.board[i][j] == 0) { //white field
                     tile = new THREE.Mesh(geometry, lightWood);
-                } else {
-                    tile = new Item();
+                } else { //black field
+                    tile = new Item(i ,j);
                     this.blackTiles.push(tile);
                 }
-                //tile.position.set(-175 + j * 50, -10, -175 + i * 50)
                 tile.position.set(175 - j * 50, -10, 175 - i * 50);
-                tile.row = i;
-                tile.column = j;
                 this.scene.add(tile);
             }
         }
     };
 
-    createMepels = (boardState) => {
+    createMepels = () => {
         let mepel;
-        for (let i = 0; i < boardState.length; i++) {
-            for (let j = 0; j < boardState[i].length; j++) {
-                if (boardState[i][j] == 1) {
-                    mepel = new Mepel("white");
+        let id = 0;
+        for (let i = 0; i < this.boardState.length; i++) {
+            for (let j = 0; j < this.boardState[i].length; j++) {
+                if (this.boardState[i][j] != 0) {
+                    mepel = new Mepel(id++, this.boardState[i][j], i, j);
                     mepel.position.set(175 - j * 50, 10, 175 - i * 50);
-                    mepel.row = i;
-                    mepel.column = j;
-                    mepel.mepelId = this.id;
                     this.scene.add(mepel);
                     this.mepels.push(mepel);
-                } else if (boardState[i][j] == 2) {
-                    mepel = new Mepel("red");
-                    mepel.position.set(175 - j * 50, 10, 175 - i * 50);
-                    mepel.row = i;
-                    mepel.column = j;
-                    mepel.mepelId = this.id;
-                    this.scene.add(mepel);
-                    this.mepels.push(mepel);
-                }
-                this.id += 1;
+                } 
             }
         }
-        this.scene.add(mepel);
     };
 
-    setPlayerPosition = (player) => {
-        if (player == 2) {
-            this.camera.position.set(0, 300, 400);
-        } else {
-            this.camera.position.set(0, 300, -400);
-        }
+    setPlayerPosition = () => {
+        this.camera.position.set(0, 300, this.player == 2 ? 400 : -400);
         this.camera.lookAt(this.scene.position);
-    };
-
-    getCamera = () => {
-        return this.camera;
-    };
-
-    getRenderer = () => {
-        return this.renderer;
     };
 
     render = () => {

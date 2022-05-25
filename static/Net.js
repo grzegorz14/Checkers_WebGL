@@ -107,38 +107,11 @@ class Net {
             this.game.yourTurn = true
         }
 
-        this.game.createMepels(this.game.boardState)
-        this.game.setPlayerPosition(player)
+        this.game.createMepels()
+        this.game.setPlayerPosition()
         this.setBoardStatus(this.game.boardState)
 
-        // let boardState = [ // 0 - empty, 1 - white, 2 - red (mepels)
-        //     [0, 2, 0, 2, 0, 2, 0, 2],
-        //     [2, 0, 2, 0, 2, 0, 2, 0],
-        //     [0, 0, 0, 0, 0, 0, 0, 0],
-        //     [0, 0, 0, 0, 0, 0, 0, 0],
-        //     [0, 0, 0, 0, 0, 0, 0, 0],
-        //     [0, 0, 0, 0, 0, 0, 0, 0],
-        //     [0, 1, 0, 1, 0, 1, 0, 1],
-        //     [1, 0, 1, 0, 1, 0, 1, 0]
-        // ]
-
         this.update = setInterval(async () => {
-            if (this.game.moved) {
-                // if (this.game.killed) {
-
-                // }
-                // else {
-                //     this.startTimer()
-                // }
-                this.startTimer()
-                this.setBoardStatus(this.game.boardState)
-                this.game.moved = false
-            }
-            else {
-                this.game.killed = false
-                this.game.yourTurn = true
-            }
-
             let response = await fetch("/getLastMove", { method: "post" })
 
             await response.json().then(async data => {
@@ -155,6 +128,7 @@ class Net {
                 }
                 else if (data.boardState != undefined && data.boardState.length > 0) {
                     if (JSON.stringify(data.boardState) !== JSON.stringify(this.game.boardState)) {
+
                         this.game.boardState = data.boardState
                         this.setBoardStatus(this.game.boardState)
 
@@ -169,9 +143,17 @@ class Net {
                             this.moveMepel(data.id, data.x, data.z, data.row, data.column)
                         }
                     }
+                    else {
+                        if (this.game.moved) {
+                            this.game.yourTurn = false
+                            this.startTimer()
+                            this.game.moved = false
+                            this.setBoardStatus(this.game.boardState)
+                        }
+                    }
                 }
             })
-        }, 1000)
+        }, 100)
     }
 
     setBoardStatus = (boardState) => {
@@ -205,6 +187,7 @@ class Net {
 
                 animation.onComplete(() => {
                     if (this.game.moved) {
+                        console.log("moved")
                         this.startTimer()
                         this.game.moved = false
                         this.game.yourTurn = false
@@ -268,14 +251,13 @@ class Net {
                             this.startTimer()
                             this.game.moved = false
                             this.game.yourTurn = false
-                            //this.game.yourTurn = true
                         }
                         else {
                             clearInterval(this.timerInterval)
                             this.ui.removeMist()
                             this.ui.hide(this.ui.dialog)
                             this.ui.hide(this.ui.counter)
-                            //this.game.yourTurn = false
+                            this.game.yourTurn = true
                         }
                     })
                 })

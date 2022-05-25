@@ -1,7 +1,6 @@
 const express = require("express")
 const app = express()
 const path = require("path")
-const { kill } = require("process")
 
 app.use(express.json())
 app.use(express.static("static"))
@@ -97,6 +96,7 @@ app.post("/getLastMove", (req, res) => {
 
 app.post("/win", (req, res) => {
     win = req.body.player
+    res.json({ "ok": "ok" })
 })
 
 app.post("/reset", (req, res) => {
