@@ -1,7 +1,7 @@
 const express = require("express")
 const app = express()
 const path = require("path")
-process.env.PORT || 3000; 
+var PORT = process.env.PORT || 3000; 
 
 app.use(express.json())
 app.use(express.static("static"))
