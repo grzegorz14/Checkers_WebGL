@@ -103,7 +103,7 @@ class Net {
     update = async () => {
         let response = await fetch("/getLastMove", { method: "post" })
 
-        await response.json().then(async data => {
+        await response.json().then(async data => { //you win
             if (data.win == this.game.player) {
                 console.log("WIN")
                 clearInterval(this.updateInterval)
@@ -220,7 +220,6 @@ class Net {
                         .start()
                     killAnimation.onComplete(() => {
                         this.game.scene.remove(mepelToKill)
-
                         clearInterval(this.timerInterval)
                         this.ui.removeMist()
                         this.ui.hide(this.ui.dialog)
