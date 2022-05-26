@@ -107,15 +107,10 @@ class Net {
             if (data.win == this.game.player) {
                 console.log("WIN")
                 clearInterval(this.updateInterval)
+                clearInterval(this.timerInterval)
                 this.win()
             }
-            else if (data.win == this.game.opponent) { //opponent wins
-                console.log("LOSE")
-                clearInterval(this.updateInterval)
-                this.lose()
-                await fetch("/reset", { method: "post" })
-            }
-            else if (JSON.stringify(data.boardState) !== JSON.stringify(this.game.boardState) && data.color == this.game.opponent && this.game.yourTurn == false) { //get opponent move
+            else if (!this.game.moved && JSON.stringify(data.boardState) !== JSON.stringify(this.game.boardState)) { //get opponent move
                 this.game.boardState = data.boardState
                 this.setBoardStatus(this.game.boardState)
 
@@ -124,10 +119,23 @@ class Net {
                 }
 
                 if (data.killId != -1) {
-                    this.killMepelAndMove(data.killId, data.id, data.x, data.z, data.row, data.column)
+                    await this.killMepelAndMove(data.killId, data.id, data.x, data.z, data.row, data.column)
                 }
                 else {
-                    this.moveMepel(data.id, data.x, data.z, data.row, data.column)
+                    await this.moveMepel(data.id, data.x, data.z, data.row, data.column)
+                }
+                clearInterval(this.timerInterval)
+                this.ui.removeMist()
+                this.ui.hide(this.ui.dialog)
+                this.ui.hide(this.ui.counter)
+                this.game.yourTurn = true
+
+                if (data.win == this.game.opponent) { //opponent wins
+                    console.log("LOSE")
+                    clearInterval(this.updateInterval)
+                    clearInterval(this.timerInterval)
+                    this.lose()
+                    await fetch("/reset", { method: "post" })
                 }
             }
             else if (this.game.moved && JSON.stringify(data.boardState) === JSON.stringify(this.game.boardState)) {
@@ -158,9 +166,9 @@ class Net {
         this.ui.boardStatus.innerHTML = miniBoard
     }
 
-    moveMepel = (id, toX, toZ, newRow, newColumn) => {
+    moveMepel = async (id, toX, toZ, newRow, newColumn) => {
         this.game.mepels.forEach(mepel => {
-            if (mepel.id == id) {
+            if (mepel.mepelId == id) {
                 mepel.column = newColumn
                 mepel.row = newRow
                 new TWEEN.Tween(mepel.position)
@@ -168,26 +176,27 @@ class Net {
                     .to({ x: toX, z: toZ }, 600)
                     .start()
                     .onComplete(() => {
-                        clearInterval(this.timerInterval)
-                        this.ui.removeMist()
-                        this.ui.hide(this.ui.dialog)
-                        this.ui.hide(this.ui.counter)
-                        this.game.yourTurn = true
+                        // clearInterval(this.timerInterval)
+                        // this.ui.removeMist()
+                        // this.ui.hide(this.ui.dialog)
+                        // this.ui.hide(this.ui.counter)
+                        // this.game.yourTurn = true
                     });
             }
         })
     }
 
-    killMepelAndMove = (killId, id, toX, toZ, newRow, newColumn) => {
+    killMepelAndMove = async (killId, id, toX, toZ, newRow, newColumn) => {
         let mepelToMove
         let mepelToKill
         this.game.mepels.forEach(mepel => {
-            if (mepel.id == id) {
+            if (mepel.mepelId == id) {
                 mepel.column = newColumn
                 mepel.row = newRow
                 mepelToMove = mepel
             }
-            else if (mepel.id == killId) {
+            if (mepel.mepelId == killId) {
+                console.log(mepel)
                 mepelToKill = mepel
                 const index = this.game.mepels.indexOf(mepel);
                 if (index > -1) {
@@ -220,11 +229,11 @@ class Net {
                         .start()
                     killAnimation.onComplete(() => {
                         this.game.scene.remove(mepelToKill)
-                        clearInterval(this.timerInterval)
-                        this.ui.removeMist()
-                        this.ui.hide(this.ui.dialog)
-                        this.ui.hide(this.ui.counter)
-                        this.game.yourTurn = true
+                        // clearInterval(this.timerInterval)
+                        // this.ui.removeMist()
+                        // this.ui.hide(this.ui.dialog)
+                        // this.ui.hide(this.ui.counter)
+                        // this.game.yourTurn = true
                     })
                 })
             })
@@ -233,7 +242,7 @@ class Net {
 
     markQueen = (id) => {
         this.game.mepels.forEach(mepel => {
-            if (mepel.id == id) {
+            if (mepel.mepelId == id) {
                 mepel.becomeQueen()
             }
         })

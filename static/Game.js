@@ -35,8 +35,7 @@ class Game {
             this.renderer.setSize(window.innerWidth, window.innerHeight);
         };
 
-        this.board = [
-            // 1 - black, 0 - white (fields)
+        this.board = [ // 1 - black, 0 - white (fields)
             [0, 1, 0, 1, 0, 1, 0, 1],
             [1, 0, 1, 0, 1, 0, 1, 0],
             [0, 1, 0, 1, 0, 1, 0, 1],
@@ -49,8 +48,7 @@ class Game {
 
         this.createBoard();
 
-        this.boardState = [
-            // 0 - empty, 1 - white, 2 - red (mepels)
+        this.boardState = [ // 0 - empty, 1 - white, 2 - red (mepels)
             [0, 2, 0, 2, 0, 2, 0, 2],
             [2, 0, 2, 0, 2, 0, 2, 0],
             [0, 0, 0, 0, 0, 0, 0, 0],
@@ -121,14 +119,13 @@ class Game {
                             if (tile === object) {
                                 if (tile.killId != -1) {
                                     this.mepels.forEach(async(m) => {
-                                        if (m.id == tile.killId) {
+                                        if (m.mepelId == tile.killId) {
                                             const index = this.mepels.indexOf(m);
                                             if (index > -1) {
                                                 this.mepels.splice(index, 1);
                                             }
                                             mepelToKill = m;
-                                            killId = m.id;
-                                            tile.killId = -1;
+                                            killId = m.mepelId;
                                             this.kill += 1;
                                             if (this.kill == 8) { //win if all of enemy mepels are killed
                                                 const body = JSON.stringify({ player: this.player });
@@ -140,6 +137,7 @@ class Game {
                                 }
                             }
                             tile.highlighted(false);
+                            tile.killId = -1;
                         });
 
                         if (killId != -1) {
@@ -168,7 +166,7 @@ class Game {
                             row: object.row,
                             column: object.column,
                             color: mepel.color,
-                            id: mepel.id,
+                            id: mepel.mepelId,
                             killId,
                             queen: mepel.type,
                         });
@@ -242,7 +240,7 @@ class Game {
                 case this.opponent: //opponent
                     this.mepels.forEach((mepel) => {
                         if (mepel.row == row && mepel.column == column) {
-                            return this.checkField(row,column,direction,checkNumber + 1,mepel.id, mepelType);
+                            return this.checkField(row,column,direction,checkNumber + 1,mepel.mepelId, mepelType);
                         }
                     });
                     return true;

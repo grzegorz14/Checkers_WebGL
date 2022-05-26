@@ -22,12 +22,12 @@ var boardState = [ // 0 - empty, 1 - white, 2 - red (mepels)
 ]
 var id
 var queen = "normal"
-var killId
+var killId = -1
 var z
 var x
-var row
-var column
-var color
+var row = -1
+var column = -1
+var color = 0
 var win = null
 var users = []
 let login
@@ -115,7 +115,7 @@ app.post("/reset", (req, res) => {
     ]
     id = -1
     killId = -1
-    color = null
+    color = -1
     win = null
     console.log("New game")
     res.json({ success: true })
