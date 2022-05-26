@@ -4,105 +4,91 @@ class Net {
         this.ui = ui
 
         this.timerInterval = null
-        this.update = null
-        this.player = null
+        this.updateInterval = null
 
         document.getElementById("playButton").onclick = this.playButton
 
         document.getElementById("resetButton").onclick = async function () {
             console.log("Game reset")
-            let success
             let response = await fetch("/reset", { method: "post" })
             await response.json().then(data => {
-                success = data.success
+                if (data.success) {
+                    alert("New game! Log in")
+                }
             })
-            if (success) {
-                alert("New game! Log in")
-            }
         }
     }
 
     playButton = async () => {
         let login = document.getElementById("login").value.trim()
-        let success
-        let info
-        let player
-
         document.getElementById("login").value = ""
         if (!login) {
             return
         }
-        const body = JSON.stringify({ login: login })
+
+        const body = JSON.stringify({ login })
         const headers = { "Content-Type": "application/json" }
         let response = await fetch("/addUser", { method: "post", body, headers })
         await response.json().then(data => {
-            success = data.success
-            info = data.info
-            player = data.player
-        })
+            if (data.success) {
+                console.log("Player " + data.player + " Login: " + login)
 
-        if (success) {
-            console.log("Player " + player + " Login: " + login)
-            this.game.boardState = [
-                [0, 2, 0, 2, 0, 2, 0, 2],
-                [2, 0, 2, 0, 2, 0, 2, 0],
-                [0, 0, 0, 0, 0, 0, 0, 0],
-                [0, 0, 0, 0, 0, 0, 0, 0],
-                [0, 0, 0, 0, 0, 0, 0, 0],
-                [0, 0, 0, 0, 0, 0, 0, 0],
-                [0, 1, 0, 1, 0, 1, 0, 1],
-                [1, 0, 1, 0, 1, 0, 1, 0]
-            ]
-            if (player == 2) {
-                this.waitForOpponent(player, login)
-            } else {
-                this.preparePlayer(player, login)
+                this.game.player = data.player
+                this.game.opponent = data.player == 1 ? 2 : 1
+                this.game.boardState = [
+                    [0, 2, 0, 2, 0, 2, 0, 2],
+                    [2, 0, 2, 0, 2, 0, 2, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 1, 0, 1, 0, 1, 0, 1],
+                    [1, 0, 1, 0, 1, 0, 1, 0]
+                ]
+                if (data.player == 2) {
+                    this.waitForOpponent(login)
+                } 
+                else {
+                    this.preparePlayer(login)
+                }
+            } 
+            else {
+                alert(data.info)
             }
-        } else {
-            alert(info)
-        }
+        })
     }
 
-    waitForOpponent = (player, login) => {
+    waitForOpponent = (login) => {
         this.ui.status.innerText = login
         this.ui.hide(this.ui.logingDialog)
         this.ui.show(this.ui.dialog)
         this.ui.dialog.innerText = "Waiting for an opponent..."
 
-        let success
-
         let intervalId = setInterval(async () => {
             const headers = { "Content-Type": "application/json" }
             let response = await fetch("/waitingForOpponent", { method: "post", headers })
-
             await response.json().then(data => {
-                success = data.success
+                if (data.success) {
+                    this.preparePlayer(login)
+                    clearInterval(intervalId)
+                }
             })
-
-            if (success) {
-                this.preparePlayer(player, login)
-                clearInterval(intervalId)
-            }
-        }, 1000)
+        }, 500)
     }
 
-
-    preparePlayer = (player, login) => {
+    preparePlayer = (login) => {
         this.ui.hide(this.ui.logingDialog)
         this.ui.hide(this.ui.dialog)
         this.ui.removeMist()
         this.ui.show(this.ui.boardStatus)
         this.ui.status.innerText = login
 
-        this.player = player
-        this.game.player = player
-        this.game.opponent = player == 1 ? 2 : 1
-
-        if (player == 2) {
+        if (this.game.player == 2) {
             this.ui.info.innerText = "Welcome " + login + "! You play red."
             this.startTimer()
             this.game.yourTurn = false
-        } else {
+        } 
+        else {
             this.ui.info.innerText = "Welcome " + login + "! You play white."
             this.game.yourTurn = true
         }
@@ -111,62 +97,59 @@ class Net {
         this.game.setPlayerPosition()
         this.setBoardStatus(this.game.boardState)
 
-        this.update = setInterval(async () => {
-            let response = await fetch("/getLastMove", { method: "post" })
-
-            await response.json().then(async data => {
-                if (data.win == this.player) {
-                    console.log("WIN")
-                    clearInterval(this.update)
-                    this.win()
-                }
-                else if (data.win != null && data.win != this.player) { //opponent wins
-                    console.log("LOSE")
-                    clearInterval(this.update)
-                    this.lose()
-                    await fetch("/reset", { method: "post" })
-                }
-                else if (data.boardState != undefined && data.boardState.length > 0) {
-                    if (JSON.stringify(data.boardState) !== JSON.stringify(this.game.boardState)) {
-
-                        this.game.boardState = data.boardState
-                        this.setBoardStatus(this.game.boardState)
-
-                        if (data.queen == "queen") {
-                            this.markQueen(data.id)
-                        }
-
-                        if (data.killId != -1) {
-                            this.killMepelAndMove(data.killId, data.id, data.x, data.z, data.row, data.column)
-                        }
-                        else {
-                            this.moveMepel(data.id, data.x, data.z, data.row, data.column)
-                        }
-                    }
-                    else {
-                        if (this.game.moved) {
-                            this.game.yourTurn = false
-                            this.startTimer()
-                            this.game.moved = false
-                            this.setBoardStatus(this.game.boardState)
-                        }
-                    }
-                }
-            })
-        }, 100)
+        this.updateInterval = setInterval(this.update, 100)
     }
 
-    setBoardStatus = (boardState) => {
+    update = async () => {
+        let response = await fetch("/getLastMove", { method: "post" })
+
+        await response.json().then(async data => {
+            if (data.win == this.game.player) {
+                console.log("WIN")
+                clearInterval(this.updateInterval)
+                this.win()
+            }
+            else if (data.win == this.game.opponent) { //opponent wins
+                console.log("LOSE")
+                clearInterval(this.updateInterval)
+                this.lose()
+                await fetch("/reset", { method: "post" })
+            }
+            else if (JSON.stringify(data.boardState) !== JSON.stringify(this.game.boardState) && data.color == this.game.opponent && this.game.yourTurn == false) { //get opponent move
+                this.game.boardState = data.boardState
+                this.setBoardStatus(this.game.boardState)
+
+                if (data.queen == "queen") {
+                    this.markQueen(data.id)
+                }
+
+                if (data.killId != -1) {
+                    this.killMepelAndMove(data.killId, data.id, data.x, data.z, data.row, data.column)
+                }
+                else {
+                    this.moveMepel(data.id, data.x, data.z, data.row, data.column)
+                }
+            }
+            else if (this.game.moved && JSON.stringify(data.boardState) === JSON.stringify(this.game.boardState)) {
+                this.game.yourTurn = false
+                this.game.moved = false
+                this.startTimer()
+                this.setBoardStatus()
+            }
+        })
+    }
+
+    setBoardStatus = () => {
         let miniBoard = ""
-        if (this.player == 2) {
+        if (this.game.player == 2) { //reverse table
             for (let i = 7; i >= 0; i--) {
                 for (let j = 7; j >= 0; j--) {
-                    miniBoard += "<label>" + boardState[i][j] + "</label>"
+                    miniBoard += "<label>" + this.game.boardState[i][j] + "</label>"
                 }
             }
         }
         else {
-            boardState.forEach(row => {
+            this.game.boardState.forEach(row => {
                 row.forEach(field => {
                     miniBoard += "<label>" + field + "</label>"
                 })
@@ -180,26 +163,17 @@ class Net {
             if (mepel.id == id) {
                 mepel.column = newColumn
                 mepel.row = newRow
-                let animation = new TWEEN.Tween(mepel.position)
+                new TWEEN.Tween(mepel.position)
                     .easing(TWEEN.Easing.Cubic.Out)
                     .to({ x: toX, z: toZ }, 600)
                     .start()
-
-                animation.onComplete(() => {
-                    if (this.game.moved) {
-                        console.log("moved")
-                        this.startTimer()
-                        this.game.moved = false
-                        this.game.yourTurn = false
-                    }
-                    else {
+                    .onComplete(() => {
                         clearInterval(this.timerInterval)
                         this.ui.removeMist()
                         this.ui.hide(this.ui.dialog)
                         this.ui.hide(this.ui.counter)
                         this.game.yourTurn = true
-                    }
-                })
+                    });
             }
         })
     }
@@ -213,9 +187,7 @@ class Net {
                 mepel.row = newRow
                 mepelToMove = mepel
             }
-        })
-        this.game.mepels.forEach(mepel => {
-            if (mepel.id == killId) {
+            else if (mepel.id == killId) {
                 mepelToKill = mepel
                 const index = this.game.mepels.indexOf(mepel);
                 if (index > -1) {
@@ -223,6 +195,7 @@ class Net {
                 }
             }
         })
+
         let upAnimation = new TWEEN.Tween(mepelToMove.position)
             .easing(TWEEN.Easing.Cubic.Out)
             .to({ y: mepelToMove.position.y + 30 }, 200)
@@ -247,18 +220,12 @@ class Net {
                         .start()
                     killAnimation.onComplete(() => {
                         this.game.scene.remove(mepelToKill)
-                        if (this.game.moved) {
-                            this.startTimer()
-                            this.game.moved = false
-                            this.game.yourTurn = false
-                        }
-                        else {
-                            clearInterval(this.timerInterval)
-                            this.ui.removeMist()
-                            this.ui.hide(this.ui.dialog)
-                            this.ui.hide(this.ui.counter)
-                            this.game.yourTurn = true
-                        }
+
+                        clearInterval(this.timerInterval)
+                        this.ui.removeMist()
+                        this.ui.hide(this.ui.dialog)
+                        this.ui.hide(this.ui.counter)
+                        this.game.yourTurn = true
                     })
                 })
             })
@@ -280,11 +247,12 @@ class Net {
         let secondsLeft = 30
         this.ui.counter.innerText = secondsLeft
         secondsLeft -= 1
+
         this.timerInterval = setInterval(async () => {
             if (secondsLeft == 0) {
                 clearInterval(this.timerInterval)
                 this.win()
-                const body = JSON.stringify({ player: this.player })
+                const body = JSON.stringify({ player: this.game.player })
                 const headers = { "Content-Type": "application/json" }
                 await fetch("/win", { method: "post", headers, body })
             }

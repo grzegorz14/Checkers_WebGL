@@ -35,12 +35,6 @@ class Game {
             this.renderer.setSize(window.innerWidth, window.innerHeight);
         };
 
-        // AXES
-        // const axes1 = new THREE.AxesHelper(-1000)
-        // const axes2 = new THREE.AxesHelper(1000)
-        // this.scene.add(axes1)
-        // this.scene.add(axes2)
-
         this.board = [
             // 1 - black, 0 - white (fields)
             [0, 1, 0, 1, 0, 1, 0, 1],
@@ -67,12 +61,11 @@ class Game {
             [1, 0, 1, 0, 1, 0, 1, 0],
         ];
 
-        // MOVE - onClick on object - raycaster
+        // MOVE - onClick on object
         let selected = false;
-        let object;
-        let mepelToKill = null;
+        let object = null;
         let killId = -1;
-        let killAnimation = null;
+        let mepelToKill = null;
         let mepel = null;
         let rowToClear;
         let columnToClear;
@@ -166,13 +159,10 @@ class Game {
                         this.boardState[rowToClear][columnToClear] = 0;
                         this.boardState[mepel.row][mepel.column] = mepel.color == 1 ? 1 : 2;
 
-                        const headers = { "Content-Type": "application/json" };
-                        let body = JSON.stringify({ boardState: this.boardState });
-                        await fetch("/setBoardState", { method: "post", headers, body });
-
                         this.moved = true;
 
-                        body = JSON.stringify({
+                        const headers = { "Content-Type": "application/json" };
+                        let body = JSON.stringify({
                             x: object.position.x,
                             z: object.position.z,
                             row: object.row,
@@ -184,13 +174,17 @@ class Game {
                         });
                         await fetch("/moveMepel", { method: "post", headers, body });
 
+                        body = JSON.stringify({ boardState: this.boardState });
+                        await fetch("/setBoardState", { method: "post", headers, body });
+
                         mepel = null;
                     }
                 } 
             }
         });
+
         this.render();
-    }
+    } //end of constructor
 
     killAndMove = async (mepel, mepelToKill, tile) => {
         this.boardState[mepelToKill.row][mepelToKill.column] = 0;
