@@ -30,7 +30,8 @@ var column = -1
 var color = 0
 var win = null
 var users = []
-let login
+var login
+var reset = 0
 
 app.post("/addUser", (req, res) => {
     login = req.body.login
@@ -60,22 +61,8 @@ app.post("/waitingForOpponent", (req, res) => {
     }
 })
 
-app.post("/setBoardState", (req, res) => {
-    boardState = req.body.boardState
-    res.json({ "ok": "ok" })
-})
-
 app.post("/getBoardState", (req, res) => {
     res.json({ boardState: boardState })
-})
-
-app.post("/compareBoardState", (req, res) => {
-    if (JSON.stringify(boardState) !== JSON.stringify(req.body.boardState)) {
-        res.json({ change: true, boardState: boardState })
-    }
-    else {
-        res.json({ change: false, boardState: boardState })
-    }
 })
 
 app.post("/moveMepel", (req, res) => {
@@ -87,6 +74,7 @@ app.post("/moveMepel", (req, res) => {
     column = req.body.column
     color = req.body.color
     queen = req.body.queen
+    boardState = req.body.boardState
     res.json({ "ok": "ok" })
 })
 
@@ -100,7 +88,11 @@ app.post("/win", (req, res) => {
     res.json({ "ok": "ok" })
 })
 
-app.post("/reset", (req, res) => {
+app.post("/resetRequest", (req, res) => {
+    reset += 1
+    if (reset == 1) {
+        return
+    }
     console.log("Reseting the game...")
     users = []
     boardState = [ // 0 - empty, 1 - white, 2 - red (mepels)
@@ -116,6 +108,7 @@ app.post("/reset", (req, res) => {
     id = -1
     killId = -1
     color = -1
+    reset = 0
     win = null
     console.log("New game")
     res.json({ success: true })

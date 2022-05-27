@@ -104,11 +104,13 @@ class Net {
         let response = await fetch("/getLastMove", { method: "post" })
 
         await response.json().then(async data => { //you win
+            console.log(data.win)
             if (data.win == this.game.player) {
                 console.log("WIN")
                 clearInterval(this.updateInterval)
                 clearInterval(this.timerInterval)
                 this.win()
+                await fetch("/resetRequest", { method: "post" })
             }
             else if (!this.game.moved && JSON.stringify(data.boardState) !== JSON.stringify(this.game.boardState)) { //get opponent move
                 this.game.boardState = data.boardState
@@ -116,6 +118,7 @@ class Net {
 
                 if (data.queen == "queen") {
                     this.markQueen(data.id)
+                    console.log("queen marked")
                 }
 
                 if (data.killId != -1) {
@@ -135,7 +138,7 @@ class Net {
                     clearInterval(this.updateInterval)
                     clearInterval(this.timerInterval)
                     this.lose()
-                    await fetch("/reset", { method: "post" })
+                    await fetch("/resetRequest", { method: "post" })
                 }
             }
             else if (this.game.moved && JSON.stringify(data.boardState) === JSON.stringify(this.game.boardState)) {
@@ -175,13 +178,6 @@ class Net {
                     .easing(TWEEN.Easing.Cubic.Out)
                     .to({ x: toX, z: toZ }, 600)
                     .start()
-                    .onComplete(() => {
-                        // clearInterval(this.timerInterval)
-                        // this.ui.removeMist()
-                        // this.ui.hide(this.ui.dialog)
-                        // this.ui.hide(this.ui.counter)
-                        // this.game.yourTurn = true
-                    });
             }
         })
     }
@@ -196,7 +192,6 @@ class Net {
                 mepelToMove = mepel
             }
             if (mepel.mepelId == killId) {
-                console.log(mepel)
                 mepelToKill = mepel
                 const index = this.game.mepels.indexOf(mepel);
                 if (index > -1) {
@@ -229,11 +224,6 @@ class Net {
                         .start()
                     killAnimation.onComplete(() => {
                         this.game.scene.remove(mepelToKill)
-                        // clearInterval(this.timerInterval)
-                        // this.ui.removeMist()
-                        // this.ui.hide(this.ui.dialog)
-                        // this.ui.hide(this.ui.counter)
-                        // this.game.yourTurn = true
                     })
                 })
             })
@@ -241,11 +231,16 @@ class Net {
     }
 
     markQueen = (id) => {
+        let marked = false
         this.game.mepels.forEach(mepel => {
             if (mepel.mepelId == id) {
                 mepel.becomeQueen()
+                marked = true
             }
         })
+        if (!marked) {
+            console.log("Queen not marked, id: " + id)
+        }
     }
 
     startTimer = () => {
@@ -259,7 +254,6 @@ class Net {
         this.timerInterval = setInterval(async () => {
             if (secondsLeft == 0) {
                 clearInterval(this.timerInterval)
-                this.win()
                 const body = JSON.stringify({ player: this.game.player })
                 const headers = { "Content-Type": "application/json" }
                 await fetch("/win", { method: "post", headers, body })

@@ -127,7 +127,7 @@ class Game {
                                             mepelToKill = m;
                                             killId = m.mepelId;
                                             this.kill += 1;
-                                            if (this.kill == 8) { //win if all of enemy mepels are killed
+                                            if (this.kill == 1) { //win if all of enemy mepels are killed
                                                 const body = JSON.stringify({ player: this.player });
                                                 const headers = { "Content-Type": "application/json" };
                                                 await fetch("/win", { method: "post", headers, body });
@@ -169,11 +169,9 @@ class Game {
                             id: mepel.mepelId,
                             killId,
                             queen: mepel.type,
+                            boardState: this.boardState
                         });
                         await fetch("/moveMepel", { method: "post", headers, body });
-
-                        body = JSON.stringify({ boardState: this.boardState });
-                        await fetch("/setBoardState", { method: "post", headers, body });
 
                         mepel = null;
                     }
