@@ -103,9 +103,8 @@ class Net {
     update = async () => {
         let response = await fetch("/getLastMove", { method: "post" })
 
-        await response.json().then(async data => { //you win
-            console.log(data.win)
-            if (data.win == this.game.player) {
+        await response.json().then(async data => { 
+            if (data.win == this.game.player) { //you win
                 console.log("WIN")
                 clearInterval(this.updateInterval)
                 clearInterval(this.timerInterval)
