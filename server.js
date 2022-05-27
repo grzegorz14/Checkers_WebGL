@@ -88,6 +88,28 @@ app.post("/win", (req, res) => {
     res.json({ "ok": "ok" })
 })
 
+app.post("/reset", (req, res) => {
+    console.log("Reseting the game...")
+    users = []
+    boardState = [ // 0 - empty, 1 - white, 2 - red (mepels)
+        [0, 2, 0, 2, 0, 2, 0, 2],
+        [2, 0, 2, 0, 2, 0, 2, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 1, 0, 1, 0, 1, 0, 1],
+        [1, 0, 1, 0, 1, 0, 1, 0]
+    ]
+    id = -1
+    killId = -1
+    color = -1
+    reset = 0
+    win = null
+    console.log("New game")
+    res.json({ success: true })
+})
+
 app.post("/resetRequest", (req, res) => {
     reset += 1
     if (reset == 1) {
