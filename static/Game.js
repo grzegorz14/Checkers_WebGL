@@ -89,15 +89,14 @@ class Game {
 
                         //mark possible moves
                         if (mepel.type == "queen") {
-                            let right = this.checkField(mepel.row, mepel.column, "right", 1, -1, "normal");
-                            let left = this.checkField(mepel.row,mepel.column,"left", 1, -1, "normal");
-                            let rightDown = this.checkField(mepel.row,mepel.column, "right",1, -1, "queen");
-                            let leftDown = this.checkField(mepel.row,mepel.column, "left", 1, -1,"queen");
-                            if (!right && !left && !rightDown && !leftDown) { //if there are no possible moves - unselect
-                                mepel.selected(false);
-                                selected = false;
-                                mepel = null;
-                            }
+                            // let right = this.checkField(mepel.row, mepel.column, "right", 1, -1, "normal");
+                            // let left = this.checkField(mepel.row,mepel.column,"left", 1, -1, "normal");
+                            // let rightDown = this.checkField(mepel.row,mepel.column, "right",1, -1, "queen");
+                            // let leftDown = this.checkField(mepel.row,mepel.column, "left", 1, -1,"queen");
+                            let rightUp = this.checkQueenMove(mepel.row, mepel.column, "right", "up", -1);
+                            let leftUp = this.checkQueenMove(mepel.row,mepel.column,"left", "up", -1);
+                            let rightDown = this.checkQueenMove(mepel.row,mepel.column, "right","down", -1);
+                            let leftDown = this.checkQueenMove(mepel.row,mepel.column, "left", "down", -1);
                         } else {
                             let right = this.checkField(mepel.row, mepel.column, "right", 1, -1, "normal");
                             let left = this.checkField(mepel.row,mepel.column,"left", 1, -1, "normal");
@@ -265,41 +264,39 @@ class Game {
         return false;
     };
 
-    // checkQueenMove = () => {
-    //     row = mepelType == "queen" ? this.player == 1 ? row + 1 : row - 1 : this.player == 1 ?row - 1 : row + 1;
-    //     column = direction == "right" ? column + 1 : column - 1;
-    //     // if (mepelType == "queen") {
-    //     //     this.checkField(row, column, direction, checkNumber, mepel.id, mepelType);
-    //     // }
-    //     if (row >= 0 && row < 8 && column >= 0 && column < 8 && checkNumber <= 2) {
-    //         switch (this.boardState[row][column]) {
-    //             case this.player: //your mepel
-    //                 return false;
-    //             case this.opponent: //opponent
-    //                 this.mepels.forEach((mepel) => {
-    //                     if (mepel.row == row && mepel.column == column) {
-    //                         return this.checkField(row,column,direction,checkNumber + 1,mepel.id, mepelType);
-    //                     }
-    //                 });
-    //                 return true;
-    //             case 0: //empty field
-    //                 this.blackTiles.forEach((tile) => {
-    //                     if (tile.row == row && tile.column == column) {
-    //                         if (tile.row == row && tile.column == column) {
-    //                             tile.highlighted(true);
-    //                             if (checkNumber == 2) {
-    //                                 tile.killId = killId;
-    //                             }
-    //                         }
-    //                     }
-    //                 });
-    //                 return true;
-    //             case -1: //out of the board
-    //                 return false;
-    //         }
-    //     }
-    //     return false;
-    // }
+    checkQueenMove = (row, column, rightOrLeft, upOrDown, killId) => {
+        row = upOrDown == "up" ? row + 1 : row - 1;
+        column = rightOrLeft == "right" ? column + 1 : column - 1;
+        if (row >= 0 && row < 8 && column >= 0 && column < 8) {
+            switch (this.boardState[row][column]) {
+                case this.player: //your mepel - blocks queen
+                    return false;
+                case this.opponent: //opponent
+                    if (killId == -1) { //two opponent's mepels block queen
+                        this.mepels.forEach((mepel) => {
+                            if (mepel.row == row && mepel.column == column) {
+                                this.checkQueenMove(row, column, rightOrLeft, upOrDown, mepel.mepelId);
+                            }
+                        });
+                    }
+                    return false;
+                case 0: //empty field
+                    this.blackTiles.forEach((tile) => {
+                        if (tile.row == row && tile.column == column) {
+                            tile.highlighted(true);
+                            if (killId != -1) {
+                                tile.killId = killId;
+                            }
+                        }
+                    });
+                    this.checkQueenMove(row, column, rightOrLeft, upOrDown, -1);
+                    return true;
+                case -1: //out of the board
+                    return false;
+            }
+        }
+        return false;
+    }
 
     createBoard = () => {
         const geometry = new THREE.BoxGeometry(50, 18, 50);
