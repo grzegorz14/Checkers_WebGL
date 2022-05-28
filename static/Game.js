@@ -67,6 +67,7 @@ class Game {
         let mepel = null;
         let rowToClear;
         let columnToClear;
+        let win = false
 
         window.addEventListener("mousedown", async(e) => {
             this.mouseVector.x = (e.clientX / window.innerWidth) * 2 - 1;
@@ -128,9 +129,7 @@ class Game {
                                             killId = m.mepelId;
                                             this.kill += 1;
                                             if (this.kill == 8) { //win if all of enemy mepels are killed
-                                                const body = JSON.stringify({ player: this.player });
-                                                const headers = { "Content-Type": "application/json" };
-                                                await fetch("/win", { method: "post", headers, body });
+                                                win = true
                                             }
                                         }
                                     });
@@ -168,12 +167,17 @@ class Game {
                             color: mepel.color,
                             id: mepel.mepelId,
                             killId,
-                            queen: mepel.type,
                             boardState: this.boardState
                         });
                         await fetch("/moveMepel", { method: "post", headers, body });
 
                         mepel = null;
+
+                        if (win) {
+                            const body = JSON.stringify({ player: this.player });
+                            const headers = { "Content-Type": "application/json" };
+                            await fetch("/win", { method: "post", headers, body });
+                        }
                     }
                 } 
             }

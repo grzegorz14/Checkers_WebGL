@@ -21,7 +21,6 @@ var boardState = [ // 0 - empty, 1 - white, 2 - red (mepels)
     [1, 0, 1, 0, 1, 0, 1, 0]
 ]
 var id
-var queen = "normal"
 var killId = -1
 var z
 var x
@@ -73,14 +72,12 @@ app.post("/moveMepel", (req, res) => {
     row = req.body.row
     column = req.body.column
     color = req.body.color
-    queen = req.body.queen
     boardState = req.body.boardState
     res.json({ "ok": "ok" })
 })
 
 app.post("/getLastMove", (req, res) => {
-    res.json({ id, killId, boardState, x, z, row, column, color, win, queen })
-    queen = "normal"
+    res.json({ id, killId, boardState, x, z, row, column, color, win })
 })
 
 app.post("/win", (req, res) => {
