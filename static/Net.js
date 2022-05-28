@@ -128,7 +128,14 @@ class Net {
                 this.ui.hide(this.ui.dialog);
                 this.ui.hide(this.ui.counter);
 
-                if (data.win == this.game.opponent) { //opponent wins
+                let lose = true;
+                this.game.forEach(mepel => { //check if any mepels left
+                    if (mepel.color == this.game.player) {
+                        lose = false;
+                    }
+                })
+
+                if (data.win == this.game.opponent || lose) { //opponent wins
                     console.log("LOSE");
                     clearInterval(this.updateInterval);
                     this.lose();
