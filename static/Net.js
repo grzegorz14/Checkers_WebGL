@@ -105,6 +105,7 @@ class Net {
 
         await response.json().then(async data => { 
             if (data.win == this.game.player) { //you win
+                this.setBoardStatus();
                 console.log("WIN");
                 clearInterval(this.updateInterval);
                 clearInterval(this.timerInterval);
@@ -113,7 +114,7 @@ class Net {
             }
             else if (!this.game.moved && JSON.stringify(data.boardState) !== JSON.stringify(this.game.boardState)) { //opponent moves
                 this.game.boardState = data.boardState;
-                this.setBoardStatus(this.game.boardState);
+                this.setBoardStatus();
 
                 if (data.killId != -1) {
                     await this.killMepelAndMove(data.killId, data.id, data.x, data.z, data.row, data.column);
