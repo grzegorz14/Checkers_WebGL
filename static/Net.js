@@ -112,8 +112,8 @@ class Net {
                 await fetch("/resetRequest", { method: "post" });
             }
             else if (!this.game.moved && JSON.stringify(data.boardState) !== JSON.stringify(this.game.boardState)) { //opponent moves
-                this.setBoardStatus(this.game.boardState);
                 this.game.boardState = data.boardState;
+                this.setBoardStatus(this.game.boardState);
 
                 if (data.killId != -1) {
                     await this.killMepelAndMove(data.killId, data.id, data.x, data.z, data.row, data.column);
