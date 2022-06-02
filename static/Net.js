@@ -129,7 +129,7 @@ class Net {
                 this.ui.hide(this.ui.counter);
 
                 let lose = true;
-                this.game.forEach(mepel => { //check if any mepels left
+                this.game.mepels.forEach(mepel => { //check if any mepels left
                     if (mepel.color == this.game.player) {
                         lose = false;
                     }
@@ -150,6 +150,12 @@ class Net {
                 this.game.moved = false;
                 this.startTimer();
                 this.setBoardStatus();
+            }
+            else if (data.win == this.game.opponent) { //opponent wins
+                console.log("LOSE");
+                clearInterval(this.updateInterval);
+                this.lose();
+                await fetch("/resetRequest", { method: "post" });
             }
         })
     }
